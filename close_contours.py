@@ -42,12 +42,38 @@ def draw_bounding_box(frame):
 
 def draw_canny_edge(frame):
     # draw canny edge of the subject of the image
+    fgmask = fgbg.apply(frame)
+    _, contours, hierarchy = cv2.findContours(fgmask, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+
+    x_max = 0
+    x_min = frame.shape[0]
+    y_max = 0
+    y_min = frame.shape[1]
+    for cnt in contours:
+        for coord in cnt:
+            if coord[0][0] > x_max:
+                x_max = coord[0][0]
+            if coord[0][0] < x_min:
+                x_min = coord[0][0]
+            if coord[0][1] > y_max:
+                y_max = coord[0][1]
+            if coord[0][1] < y_min:
+                y_min = coord[0][1]
+
+    edges = cv2.Canny(frame, 100, 200)
+    _, contours, hierarchy = cv2.findContours(edges, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    canny_frame = frame.copy()
+    cv2.drawContours(canny_frame, contours, -1, (255, 255, 255), 1)
+    frame[x_min:x_max,y_min:y_max] = canny_frame[x_min:x_max,y_min:y_max]
+    cv2.rectangle(frame, (x_min, y_min), (x_max, y_max), (255, 255, 255))
+
+def draw_silhouette(frame):
+    # TODO fill it in!!
     pass
 
-# TODO canny or contour of only the subject
-# TODO fill it in!!
-
 camera = cv2.VideoCapture(0)
+# cv2.namedWindow('frame', cv2.WND_PROP_FULLSCREEN)
+# cv2.setWindowProperty('frame', cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
 fgbg = cv2.createBackgroundSubtractorMOG2(history=50,
                                           varThreshold=36,
                                           detectShadows=False)
@@ -59,11 +85,12 @@ while True:
 
     # draw_full_contours(frame)
     # draw_subtracted_contours(frame)
-    draw_bounding_box(frame)
+    # draw_bounding_box(frame)
+    # draw_canny_edge(frame)
+    draw_silhouette(frame)
 
     # display the frame
     cv2.imshow('frame', frame)
-
 
     # listen for esc key
     k = cv2.waitKey(30) & 0xff
